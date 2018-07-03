@@ -1,0 +1,12 @@
+{
+    "name": "NewAssembly",
+    "references": [
+        "Cube.Core",
+        "Cube.Gameplay",
+        "Cube.Networking"
+    ],
+    "optionalUnityReferences": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false
+}

@@ -25,7 +25,6 @@ namespace Pirates {
             _pawn = GetComponent<Pawn>();
 
             _characterController = GetComponent<KinematicCharacterController>();
-            _characterController.Motor.SetPositionAndRotation(transform.position, transform.rotation);
 
             if (isServer) {
                 _playerControllerSystem = gameObject.GetSystem<ServerPlayerControllerSystem>();

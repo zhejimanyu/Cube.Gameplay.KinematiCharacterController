@@ -42,7 +42,7 @@ namespace Pirates {
                     var positionCorrection = _positionCorrection * a;
                     _positionCorrection -= positionCorrection;
 
-                    var rotation = Quaternion.AngleAxis(Mathf.Lerp(transform.rotation.eulerAngles.y, _serverYaw, a), Vector3.up);
+                    var rotation = Quaternion.AngleAxis(Mathf.LerpAngle(transform.rotation.eulerAngles.y, _serverYaw, a), Vector3.up);
 
                     _characterController.Motor.MoveCharacter(transform.position + positionCorrection);
                     _characterController.Motor.RotateCharacter(rotation);
@@ -53,29 +53,36 @@ namespace Pirates {
         void UpdateInput() {
             Assert.IsNotNull(_pawn.controller);
 
-            var input = _pawn.controller.input;
+            var playerController = _pawn.controller as PlayerController;
+            if (playerController != null) {
+                var input = playerController.playerInput;
 
-            var characterInputs = new PlayerCharacterInputs {
-                MoveAxisForward = (input.forward ? 1 : 0) - (input.back ? 1 : 0),
-                MoveAxisRight = (input.right ? 1 : 0) - (input.left ? 1 : 0),
-                JumpDown = input.jump,
-                CameraRotation = Quaternion.AngleAxis(input.yaw, Vector3.up),
-                CrouchDown = Input.GetKeyDown(KeyCode.C), // #todo
-                CrouchUp = Input.GetKeyUp(KeyCode.C)
-            };
+                var characterInputs = new PlayerCharacterInputs {
+                    MoveAxisForward = (input.forward ? 1 : 0) - (input.back ? 1 : 0),
+                    MoveAxisRight = (input.right ? 1 : 0) - (input.left ? 1 : 0),
+                    JumpDown = input.jump,
+                    CameraRotation = Quaternion.AngleAxis(input.yaw, Vector3.up),
+                    CrouchDown = Input.GetKeyDown(KeyCode.C), // #todo
+                    CrouchUp = Input.GetKeyUp(KeyCode.C)
+                };
+                _characterController.SetInputs(ref characterInputs);
 
-            _characterController.SetInputs(ref characterInputs);
-
+#if CLIENT
+                if (isClient) {
+                    playerController.playerInput.position = transform.position;
+                }
+#endif
+            }
 #if SERVER
             if (isServer) {
-                // Snap to client position if close enough, else correct client
                 var remotePlayerController = _pawn.controller as ServerRemotePlayerController;
                 if (remotePlayerController != null) {
-                    var diff = input.position - transform.position;
+                    // Snap to client position if close enough, else correct client
+                    var diff = remotePlayerController.playerInput.position - transform.position;
                     if (diff.sqrMagnitude < 1) {
-                        _characterController.Motor.SetPosition(input.position);
+                        _characterController.Motor.SetPosition(remotePlayerController.playerInput.position);
                     } else {
-                        input.position = transform.position;
+                        remotePlayerController.playerInput.position = transform.position;
 
                         if (Time.time >= _nextClientPositionCorrectionTime) {
                             _nextClientPositionCorrectionTime = Time.time + 0.3f;
@@ -86,13 +93,16 @@ namespace Pirates {
                 }
             }
 #endif
-#if CLIENT
-            if (isClient) {
-                input.position = transform.position;
+            var aiController = _pawn.controller as AIController;
+            if (aiController != null) {
+                var input = aiController.aiInput;
 
-                _pawn.controller.input = input;
+                var characterInputs = new AICharacterInputs {
+                    MoveVector = input.MoveVector,
+                    LookVector = input.LookVector
+                };
+                _characterController.SetInputs(ref characterInputs);
             }
-#endif
         }
 
         public void CorrectPosition(Vector3 position) {
@@ -127,7 +137,7 @@ namespace Pirates {
             var pos = bs.ReadVector3();
             var yaw = bs.ReadFloat();
 
-            if (_pawn.isMounted)
+            if (_pawn == null || _pawn.isMounted)
                 return;
 
             // Position

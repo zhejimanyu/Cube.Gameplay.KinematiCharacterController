@@ -53,20 +53,20 @@ namespace Pirates {
 
         public CharacterState CurrentCharacterState { get; private set; }
 
-        private Collider[] _probedColliders = new Collider[8];
-        private Vector3 _moveInputVector;
-        private Vector3 _lookInputVector;
-        private bool _jumpRequested = false;
-        private bool _jumpConsumed = false;
-        private bool _jumpedThisFrame = false;
-        private float _timeSinceJumpRequested = Mathf.Infinity;
-        private float _timeSinceLastAbleToJump = 0f;
-        private Vector3 _internalVelocityAdd = Vector3.zero;
-        private bool _shouldBeCrouching = false;
-        private bool _isCrouching = false;
+        Collider[] _probedColliders = new Collider[8];
+        Vector3 _moveInputVector;
+        Vector3 _lookInputVector;
+        bool _jumpRequested = false;
+        bool _jumpConsumed = false;
+        bool _jumpedThisFrame = false;
+        float _timeSinceJumpRequested = Mathf.Infinity;
+        float _timeSinceLastAbleToJump = 0f;
+        Vector3 _internalVelocityAdd = Vector3.zero;
+        bool _shouldBeCrouching = false;
+        bool _isCrouching = false;
 
-        private Vector3 lastInnerNormal = Vector3.zero;
-        private Vector3 lastOuterNormal = Vector3.zero;
+        Vector3 lastInnerNormal = Vector3.zero;
+        Vector3 lastOuterNormal = Vector3.zero;
 
         private void Start() {
             // Handle initial state

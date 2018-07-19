@@ -1,0 +1,12 @@
+{
+    "name": "KinematicCharacterController.Editor",
+    "references": [
+        "Cube.Gameplay.KinematicCharacterController"
+    ],
+    "optionalUnityReferences": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false
+}

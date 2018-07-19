@@ -1,5 +1,5 @@
 {
-    "name": "NewAssembly",
+    "name": "Cube.Gameplay.KinematicCharacterController",
     "references": [
         "Cube.Core",
         "Cube.Gameplay",

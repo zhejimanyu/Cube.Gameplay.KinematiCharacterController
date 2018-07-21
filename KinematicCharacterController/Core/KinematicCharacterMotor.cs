@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace KinematicCharacterController
 {
@@ -408,6 +409,9 @@ namespace KinematicCharacterController
             }
             private set
             {
+                Assert.IsFalse(float.IsNaN(value.x));
+                Assert.IsFalse(float.IsNaN(value.y));
+                Assert.IsFalse(float.IsNaN(value.z));
                 _internalTransientPosition = value;
             }
         }

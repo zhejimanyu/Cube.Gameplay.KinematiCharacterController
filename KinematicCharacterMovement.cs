@@ -16,7 +16,7 @@ namespace Pirates {
         Pawn _pawn;
         KinematicCharacterController _characterController;
 
-        Vector3 _positionCorrection;
+        Vector3 _serverPosition;
         float _serverYaw;
 
         float _nextClientPositionCorrectionTime;
@@ -37,14 +37,9 @@ namespace Pirates {
                 UpdateInput();
             } else {
                 if (isClient && !_pawn.isMounted) {
-                    var a = Mathf.Min(1, Time.deltaTime * 8);
+                    var rotation = Quaternion.AngleAxis(_serverYaw, Vector3.up);
 
-                    var positionCorrection = _positionCorrection * a;
-                    _positionCorrection -= positionCorrection;
-
-                    var rotation = Quaternion.AngleAxis(Mathf.LerpAngle(transform.rotation.eulerAngles.y, _serverYaw, a), Vector3.up);
-
-                    _characterController.Motor.MoveCharacter(transform.position + positionCorrection);
+                    _characterController.Motor.MoveCharacter(_serverPosition);
                     _characterController.Motor.RotateCharacter(rotation);
                 }
             }
@@ -69,7 +64,7 @@ namespace Pirates {
 
 #if CLIENT
                 if (isClient) {
-                    playerController.playerInput.position = transform.position;
+                    playerController.playerInput.worldPosition = transform.position;
                 }
 #endif
             }
@@ -78,11 +73,11 @@ namespace Pirates {
                 var remotePlayerController = _pawn.controller as ServerRemotePlayerController;
                 if (remotePlayerController != null) {
                     // Snap to client position if close enough, else correct client
-                    var diff = remotePlayerController.playerInput.position - transform.position;
+                    var diff = remotePlayerController.playerInput.worldPosition - transform.position;
                     if (diff.sqrMagnitude < 1) {
-                        _characterController.Motor.SetPosition(remotePlayerController.playerInput.position);
+                        _characterController.Motor.SetPosition(remotePlayerController.playerInput.worldPosition);
                     } else {
-                        remotePlayerController.playerInput.position = transform.position;
+                        remotePlayerController.playerInput.worldPosition = transform.position;
 
                         if (Time.time >= _nextClientPositionCorrectionTime) {
                             _nextClientPositionCorrectionTime = Time.time + 0.3f;
@@ -139,17 +134,8 @@ namespace Pirates {
 
             if (_pawn == null || _pawn.isMounted)
                 return;
-
-            // Position
-            var posDiff = pos - transform.position;
-            if (posDiff.sqrMagnitude < 1) {
-                _positionCorrection = posDiff;
-            } else {
-                transform.position = pos;
-
-                _positionCorrection = Vector3.zero;
-            }
-
+            
+            _serverPosition = pos;
             _serverYaw = yaw;
         }
 #endif

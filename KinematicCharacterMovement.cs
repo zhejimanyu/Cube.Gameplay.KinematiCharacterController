@@ -37,9 +37,14 @@ namespace Pirates {
                 UpdateInput();
             } else {
                 if (isClient && !_pawn.isMounted) {
-                    var rotation = Quaternion.AngleAxis(_serverYaw, Vector3.up);
+                    var diff = _serverPosition - transform.position;
+                    if (diff.sqrMagnitude < 1) {
+                        _characterController.Motor.MoveCharacter(_serverPosition);
+                    } else {
+                        _characterController.Motor.SetPosition(_serverPosition);
+                    }
 
-                    _characterController.Motor.MoveCharacter(_serverPosition);
+                    var rotation = Quaternion.AngleAxis(_serverYaw, Vector3.up);
                     _characterController.Motor.RotateCharacter(rotation);
                 }
             }
@@ -134,7 +139,7 @@ namespace Pirates {
 
             if (_pawn == null || _pawn.isMounted)
                 return;
-            
+
             _serverPosition = pos;
             _serverYaw = yaw;
         }

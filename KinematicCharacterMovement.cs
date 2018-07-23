@@ -98,8 +98,9 @@ namespace Pirates {
                 var input = aiController.aiInput;
 
                 var characterInputs = new AICharacterInputs {
-                    MoveVector = input.MoveVector,
-                    LookVector = input.LookVector
+                    MoveVector = input.moveVector,
+                    LookVector = input.lookVector,
+                    JumpDown = input.jump
                 };
                 _characterController.SetInputs(ref characterInputs);
             }

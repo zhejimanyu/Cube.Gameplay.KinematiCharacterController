@@ -24,6 +24,7 @@ namespace Pirates {
     public struct AICharacterInputs {
         public Vector3 MoveVector;
         public Vector3 LookVector;
+        public bool JumpDown;
     }
 
     public class KinematicCharacterController : BaseCharacterController {
@@ -163,6 +164,18 @@ namespace Pirates {
         public void SetInputs(ref AICharacterInputs inputs) {
             _moveInputVector = inputs.MoveVector;
             _lookInputVector = inputs.LookVector;
+
+            switch (CurrentCharacterState) {
+                case CharacterState.Default: {
+                        // Jumping input
+                        if (inputs.JumpDown) {
+                            _timeSinceJumpRequested = 0f;
+                            _jumpRequested = true;
+                        }
+                        
+                        break;
+                    }
+            }
         }
 
         /// <summary>

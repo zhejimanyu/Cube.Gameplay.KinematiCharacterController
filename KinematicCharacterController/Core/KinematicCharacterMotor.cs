@@ -409,9 +409,7 @@ namespace KinematicCharacterController
             }
             private set
             {
-                Assert.IsFalse(float.IsNaN(value.x));
-                Assert.IsFalse(float.IsNaN(value.y));
-                Assert.IsFalse(float.IsNaN(value.z));
+                Assert.IsFalse(float.IsNaN(value.x) || float.IsNaN(value.y) || float.IsNaN(value.z));
                 _internalTransientPosition = value;
             }
         }

@@ -409,7 +409,11 @@ namespace KinematicCharacterController
             }
             private set
             {
-                Assert.IsFalse(float.IsNaN(value.x) || float.IsNaN(value.y) || float.IsNaN(value.z));
+                if (float.IsNaN(value.x) || float.IsNaN(value.y) || float.IsNaN(value.z)) {
+                    Debug.LogWarning("Tried to assign NaN, ignored");
+                    return;
+                }
+                
                 _internalTransientPosition = value;
             }
         }

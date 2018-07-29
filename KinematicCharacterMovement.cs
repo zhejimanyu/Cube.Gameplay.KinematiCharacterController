@@ -79,13 +79,13 @@ namespace Pirates {
                 if (remotePlayerController != null) {
                     // Snap to client position if close enough, else correct client
                     var diff = remotePlayerController.playerInput.worldPosition - transform.position;
-                    if (diff.sqrMagnitude < 1) {
+                    if (diff.sqrMagnitude < 6) {
                         _characterController.Motor.SetPosition(remotePlayerController.playerInput.worldPosition);
                     } else {
                         remotePlayerController.playerInput.worldPosition = transform.position;
 
                         if (Time.time >= _nextClientPositionCorrectionTime) {
-                            _nextClientPositionCorrectionTime = Time.time + 0.3f;
+                            _nextClientPositionCorrectionTime = Time.time + 0.2f;
 
                             _playerControllerSystem.SendControllerResetPawnPosition(remotePlayerController.connection, transform.position);
                         }

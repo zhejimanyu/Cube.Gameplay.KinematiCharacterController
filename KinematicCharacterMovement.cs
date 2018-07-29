@@ -110,6 +110,11 @@ namespace Pirates {
             _characterController.Motor.SetPosition(position);
         }
 
+        public void AddForce(Vector3 force, ForceMode mode) {
+            _characterController.Motor.ForceUnground();
+            _characterController.AddVelocity(force);
+        }
+
         public void OnEnterLadder(Ladder ladder) {
         }
 

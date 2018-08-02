@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using UnityEngine.Assertions;
 
 namespace KinematicCharacterController
 {
@@ -195,10 +194,16 @@ namespace KinematicCharacterController
         private PhysicMaterial CapsulePhysicsMaterial;
 
         [Header("Misc Options")]
+
         /// <summary>
-        /// Increases the range of dround detection, to allow snapping to ground at very high speeds
+        /// Notifies the Character Controller when discrete collisions are detected
         /// </summary>    
-        [Tooltip("Increases the range of dround detection, to allow snapping to ground at very high speeds")]
+        [Tooltip("Notifies the Character Controller when discrete collisions are detected")]
+        public bool DetectDiscreteCollisions = false;
+        /// <summary>
+        /// Increases the range of ground detection, to allow snapping to ground at very high speeds
+        /// </summary>    
+        [Tooltip("Increases the range of ground detection, to allow snapping to ground at very high speeds")]
         public float GroundDetectionExtraDistance = 0f;
         /// <summary>
         /// Maximum height of a step which the character can climb
@@ -234,11 +239,6 @@ namespace KinematicCharacterController
         public float MaxStableDenivelationAngle = 180f;
 
         [Header("Rigidbody interactions")]
-        /// <summary>
-        /// A relative mass value used for pushing rigidbodies in \"SimulatedDynamic\" RigidbodyInteractionType
-        /// </summary>
-        [Tooltip("A relative mass value used for pushing rigidbodies in \"SimulatedDynamic\" RigidbodyInteractionType")]
-        public float SimulatedMass = 0.2f;
         /// <summary>
         /// How the character interacts with non-kinematic rigidbodies. \"Kinematic\" mode means the character pushes the rigidbodies with infinite force (as a kinematic body would). \"SimulatedDynamic\" pushes the rigidbodies with a simulated mass value.
         /// </summary>
@@ -409,11 +409,6 @@ namespace KinematicCharacterController
             }
             private set
             {
-                if (float.IsNaN(value.x) || float.IsNaN(value.y) || float.IsNaN(value.z)) {
-                    Debug.LogWarning("Tried to assign NaN, ignored");
-                    return;
-                }
-                
                 _internalTransientPosition = value;
             }
         }
@@ -519,26 +514,26 @@ namespace KinematicCharacterController
         }
 
         // Warning: Don't touch these constants unless you know exactly what you're doing!
-        private const int MaxHitsBudget = 16;
-        private const int MaxCollisionBudget = 16;
-        private const int MaxGroundingSweepIterations = 2;
-        private const int MaxMovementSweepIterations = 6;
-        private const int MaxSteppingSweepIterations = 3;
-        private const int MaxRigidbodyOverlapsCount = 16;
-        private const int MaxDiscreteCollisionIterations = 3;
-        private const float CollisionOffset = 0.001f;
-        private const float GroundProbeReboundDistance = 0.02f;
-        private const float MinimumGroundProbingDistance = 0.005f;
-        private const float GroundProbingBackstepDistance = 0.1f;
-        private const float SweepProbingBackstepDistance = 0.002f;
-        private const float SecondaryProbesVertical = 0.02f;
-        private const float SecondaryProbesHorizontal = 0.001f;
-        private const float MinVelocityMagnitude = 0.01f;
-        private const float SteppingForwardDistance = 0.03f;
-        private const float MinDistanceForLedge = 0.05f;
-        private const float CorrelationForVerticalObstruction = 0.01f;
-        private const float ExtraSteppingForwardDistance = 0.01f;
-        private const float ExtraStepHeightPadding = 0.01f;
+        public const int MaxHitsBudget = 16;
+        public const int MaxCollisionBudget = 16;
+        public const int MaxGroundingSweepIterations = 2;
+        public const int MaxMovementSweepIterations = 6;
+        public const int MaxSteppingSweepIterations = 3;
+        public const int MaxRigidbodyOverlapsCount = 16;
+        public const int MaxDiscreteCollisionIterations = 3;
+        public const float CollisionOffset = 0.001f;
+        public const float GroundProbeReboundDistance = 0.02f;
+        public const float MinimumGroundProbingDistance = 0.005f;
+        public const float GroundProbingBackstepDistance = 0.1f;
+        public const float SweepProbingBackstepDistance = 0.002f;
+        public const float SecondaryProbesVertical = 0.02f;
+        public const float SecondaryProbesHorizontal = 0.001f;
+        public const float MinVelocityMagnitude = 0.01f;
+        public const float SteppingForwardDistance = 0.03f;
+        public const float MinDistanceForLedge = 0.05f;
+        public const float CorrelationForVerticalObstruction = 0.01f;
+        public const float ExtraSteppingForwardDistance = 0.01f;
+        public const float ExtraStepHeightPadding = 0.01f;
 #pragma warning restore 0414 
 
         private void OnEnable()
@@ -600,8 +595,6 @@ namespace KinematicCharacterController
             MinRequiredStepDepth = Mathf.Clamp(MinRequiredStepDepth, 0f, CapsuleRadius);
 
             MaxStableDistanceFromLedge = Mathf.Clamp(MaxStableDistanceFromLedge, 0f, CapsuleRadius);
-
-            SimulatedMass = Mathf.Clamp(SimulatedMass, 0f, 9999f);
 
             transform.localScale = Vector3.one;
 
@@ -904,8 +897,6 @@ namespace KinematicCharacterController
                                     HitStabilityReport mockReport = new HitStabilityReport();
                                     mockReport.IsStable = IsStableOnNormal(resolutionDirection);
                                     resolutionDirection = GetObstructionNormal(resolutionDirection, mockReport);
-                                    float tiltAngle = 90f - Vector3.Angle(originalResolutionDirection, resolutionDirection);
-                                    resolutionDistance = resolutionDistance / Mathf.Sin(tiltAngle * Mathf.Deg2Rad);
 
                                     // Solve overlap
                                     Vector3 resolutionMovement = resolutionDirection * (resolutionDistance + CollisionOffset);
@@ -1140,8 +1131,6 @@ namespace KinematicCharacterController
                                     HitStabilityReport mockReport = new HitStabilityReport();
                                     mockReport.IsStable = IsStableOnNormal(resolutionDirection);
                                     resolutionDirection = GetObstructionNormal(resolutionDirection, mockReport);
-                                    float tiltAngle = 90f - Vector3.Angle(originalResolutionDirection, resolutionDirection);
-                                    resolutionDistance = resolutionDistance / Mathf.Sin(tiltAngle * Mathf.Deg2Rad);
 
                                     // Solve overlap
                                     Vector3 resolutionMovement = resolutionDirection * (resolutionDistance + CollisionOffset);
@@ -1249,6 +1238,16 @@ namespace KinematicCharacterController
             if(HasPlanarConstraint)
             {
                 TransientPosition = InitialSimulationPosition + Vector3.ProjectOnPlane(TransientPosition - InitialSimulationPosition, PlanarConstraintAxis.normalized);
+            }
+
+            // Discrete collision detection
+            if(DetectDiscreteCollisions)
+            {
+                int nbOverlaps = CharacterCollisionsOverlap(TransientPosition, TransientRotation, _internalProbedColliders, CollisionOffset * 2f);
+                for(int i = 0; i < nbOverlaps; i++)
+                {
+                    CharacterController.OnDiscreteCollisionDetected(_internalProbedColliders[i]);
+                }
             }
 
             this.CharacterController.AfterCharacterUpdate(deltaTime);
@@ -1581,15 +1580,18 @@ namespace KinematicCharacterController
         {
             if (_rigidbodyProjectionHitCount < _internalRigidbodyProjectionHits.Length)
             {
-                RigidbodyProjectionHit rph = new RigidbodyProjectionHit();
-                rph.Rigidbody = hitRigidbody;
-                rph.HitPoint = hitPoint;
-                rph.EffectiveHitNormal = obstructionNormal;
-                rph.HitVelocity = hitVelocity;
-                rph.StableOnHit = hitStabilityReport.IsStable;
+                if (!hitRigidbody.GetComponent<KinematicCharacterMotor>())
+                {
+                    RigidbodyProjectionHit rph = new RigidbodyProjectionHit();
+                    rph.Rigidbody = hitRigidbody;
+                    rph.HitPoint = hitPoint;
+                    rph.EffectiveHitNormal = obstructionNormal;
+                    rph.HitVelocity = hitVelocity;
+                    rph.StableOnHit = hitStabilityReport.IsStable;
 
-                _internalRigidbodyProjectionHits[_rigidbodyProjectionHitCount] = rph;
-                _rigidbodyProjectionHitCount++;
+                    _internalRigidbodyProjectionHits[_rigidbodyProjectionHitCount] = rph;
+                    _rigidbodyProjectionHitCount++;
+                }
             }
         }
 
@@ -1706,27 +1708,10 @@ namespace KinematicCharacterController
                             _rigidbodiesPushedThisMove[_rigidbodiesPushedCount] = _internalRigidbodyProjectionHits[i].Rigidbody;
                             _rigidbodiesPushedCount++;
 
-                            // Handle pushing rigidbodies in SimulatedDynamic mode
-                            if (SimulatedMass > 0f &&
-                                RigidbodyInteractionType == RigidbodyInteractionType.SimulatedDynamic &&
-                                !_internalRigidbodyProjectionHits[i].StableOnHit &&
-                                !_internalRigidbodyProjectionHits[i].Rigidbody.isKinematic)
+                            if(RigidbodyInteractionType == RigidbodyInteractionType.SimulatedDynamic)
                             {
-                                float massRatio = SimulatedMass / _internalRigidbodyProjectionHits[i].Rigidbody.mass;
-                                Vector3 effectiveHitRigidbodyVelocity = GetVelocityFromRigidbodyMovement(_internalRigidbodyProjectionHits[i].Rigidbody, _internalRigidbodyProjectionHits[i].HitPoint, deltaTime);
-                                Vector3 relativeVelocity = Vector3.Project(_internalRigidbodyProjectionHits[i].HitVelocity, _internalRigidbodyProjectionHits[i].EffectiveHitNormal) - effectiveHitRigidbodyVelocity;
-
-                                _internalRigidbodyProjectionHits[i].Rigidbody.AddForceAtPosition(massRatio * relativeVelocity, _internalRigidbodyProjectionHits[i].HitPoint, ForceMode.VelocityChange);
-                            }
-
-                            // Compensate character's own velocity against the moving rigidbodies
-                            if (!_internalRigidbodyProjectionHits[i].StableOnHit)
-                            {
-                                Vector3 effectiveRigidbodyVelocity = GetVelocityFromRigidbodyMovement(_internalRigidbodyProjectionHits[i].Rigidbody, _internalRigidbodyProjectionHits[i].HitPoint, deltaTime);
-                                Vector3 projRigidbodyVelocity = Vector3.Project(effectiveRigidbodyVelocity, _internalRigidbodyProjectionHits[i].EffectiveHitNormal);
-                                Vector3 projCharacterVelocity = Vector3.Project(processedVelocity, _internalRigidbodyProjectionHits[i].EffectiveHitNormal);
-                                processedVelocity += projRigidbodyVelocity - projCharacterVelocity;
-                            }
+                                CharacterController.HandleSimulatedRigidbodyInteraction(ref processedVelocity, _internalRigidbodyProjectionHits[i], deltaTime);
+                            }                            
                         }
                     }
                 }
@@ -2119,13 +2104,13 @@ namespace KinematicCharacterController
         /// Detect if the character capsule is overlapping with anything collidable
         /// </summary>
         /// <returns> Returns number of overlaps </returns>
-        public int CharacterCollisionsOverlap(Vector3 atPosition, Quaternion atRotation, Collider[] overlappedColliders)
+        public int CharacterCollisionsOverlap(Vector3 atPosition, Quaternion atRotation, Collider[] overlappedColliders, float radiusInflate = 0f)
         {
             int nbHits = 0;
             int nbUnfilteredHits = Physics.OverlapCapsuleNonAlloc(
                         atPosition + (atRotation * CharacterTransformToCapsuleBottomHemi),
                         atPosition + (atRotation * CharacterTransformToCapsuleTopHemi),
-                        Capsule.radius,
+                        Capsule.radius + radiusInflate,
                         overlappedColliders,
                         CollidableLayers,
                         QueryTriggerInteraction.Ignore);
@@ -2151,13 +2136,13 @@ namespace KinematicCharacterController
         /// Detect if the character capsule is overlapping with anything
         /// </summary>
         /// <returns> Returns number of overlaps </returns>
-        public int CharacterOverlap(Vector3 atPosition, Quaternion atRotation, Collider[] overlappedColliders, LayerMask layers, QueryTriggerInteraction triggerInteraction)
+        public int CharacterOverlap(Vector3 atPosition, Quaternion atRotation, Collider[] overlappedColliders, LayerMask layers, QueryTriggerInteraction triggerInteraction, float radiusInflate = 0f)
         {
             int nbHits = 0;
             int nbUnfilteredHits = Physics.OverlapCapsuleNonAlloc(
                         atPosition + (atRotation * CharacterTransformToCapsuleBottomHemi),
                         atPosition + (atRotation * CharacterTransformToCapsuleTopHemi),
-                        Capsule.radius,
+                        Capsule.radius + radiusInflate,
                         overlappedColliders,
                         layers,
                         triggerInteraction);
@@ -2183,7 +2168,7 @@ namespace KinematicCharacterController
         /// Sweeps the capsule's volume to detect collision hits
         /// </summary>
         /// <returns> Returns the number of hits </returns>
-        public int CharacterCollisionsSweep(Vector3 position, Quaternion rotation, Vector3 direction, float distance, out RaycastHit closestHit, RaycastHit[] hits)
+        public int CharacterCollisionsSweep(Vector3 position, Quaternion rotation, Vector3 direction, float distance, out RaycastHit closestHit, RaycastHit[] hits, float radiusInflate = 0f)
         {
             direction.Normalize();
             
@@ -2192,7 +2177,7 @@ namespace KinematicCharacterController
             int nbUnfilteredHits = Physics.CapsuleCastNonAlloc(
                     position + (rotation * CharacterTransformToCapsuleBottomHemi) - (direction * SweepProbingBackstepDistance),
                     position + (rotation * CharacterTransformToCapsuleTopHemi) - (direction * SweepProbingBackstepDistance),
-                    Capsule.radius,
+                    Capsule.radius + radiusInflate,
                     direction,
                     hits,
                     distance + SweepProbingBackstepDistance,
@@ -2235,7 +2220,7 @@ namespace KinematicCharacterController
         /// Sweeps the capsule's volume to detect hits
         /// </summary>
         /// <returns> Returns the number of hits </returns>
-        public int CharacterSweep(Vector3 position, Quaternion rotation, Vector3 direction, float distance, out RaycastHit closestHit, RaycastHit[] hits, LayerMask layers, QueryTriggerInteraction triggerInteraction)
+        public int CharacterSweep(Vector3 position, Quaternion rotation, Vector3 direction, float distance, out RaycastHit closestHit, RaycastHit[] hits, LayerMask layers, QueryTriggerInteraction triggerInteraction, float radiusInflate = 0f)
         {
             direction.Normalize();
             closestHit = new RaycastHit();
@@ -2245,7 +2230,7 @@ namespace KinematicCharacterController
             int nbUnfilteredHits = Physics.CapsuleCastNonAlloc(
                 position + (rotation * CharacterTransformToCapsuleBottomHemi),
                 position + (rotation * CharacterTransformToCapsuleTopHemi),
-                Capsule.radius,
+                Capsule.radius + radiusInflate,
                 direction,
                 hits,
                 distance,

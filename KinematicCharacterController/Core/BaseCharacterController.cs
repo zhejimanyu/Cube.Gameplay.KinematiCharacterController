@@ -70,7 +70,14 @@ namespace KinematicCharacterController
         /// Use this for advanced customization of character hit stability
         /// </summary>
         public abstract void ProcessHitStabilityReport(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint, Vector3 atCharacterPosition, Quaternion atCharacterRotation, ref HitStabilityReport hitStabilityReport);
-        
+
+        /// <summary>
+        /// Notifies you when the character is colliding against colliders, but that collision isn't the result of a character movement
+        /// </summary>
+        public virtual void OnDiscreteCollisionDetected(Collider hitCollider)
+        {
+        }
+
         /// <summary>
         /// Allows you to override the way velocity is projected on an obstruction
         /// </summary>
@@ -105,6 +112,36 @@ namespace KinematicCharacterController
                 {
                     movement = Vector3.ProjectOnPlane(movement, obstructionNormal);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Allows you to override the way hit rigidbodies are pushed / interacted with. 
+        /// ProcessedVelocity is what must be modified if this interaction affects the character's velocity.
+        /// </summary>
+        public virtual void HandleSimulatedRigidbodyInteraction(ref Vector3 processedVelocity, RigidbodyProjectionHit hit, float deltaTime)
+        {
+            float simulatedCharacterMass = 0.2f;
+
+            // Handle pushing rigidbodies in SimulatedDynamic mode
+            if (simulatedCharacterMass > 0f &&
+                !hit.StableOnHit &&
+                !hit.Rigidbody.isKinematic)
+            {
+                float massRatio = simulatedCharacterMass / hit.Rigidbody.mass;
+                Vector3 effectiveHitRigidbodyVelocity = Motor.GetVelocityFromRigidbodyMovement(hit.Rigidbody, hit.HitPoint, deltaTime);
+                Vector3 relativeVelocity = Vector3.Project(hit.HitVelocity, hit.EffectiveHitNormal) - effectiveHitRigidbodyVelocity;
+
+                hit.Rigidbody.AddForceAtPosition(massRatio * relativeVelocity, hit.HitPoint, ForceMode.VelocityChange);
+            }
+
+            // Compensate character's own velocity against the moving rigidbodies
+            if (!hit.StableOnHit)
+            {
+                Vector3 effectiveRigidbodyVelocity = Motor.GetVelocityFromRigidbodyMovement(hit.Rigidbody, hit.HitPoint, deltaTime);
+                Vector3 projRigidbodyVelocity = Vector3.Project(effectiveRigidbodyVelocity, hit.EffectiveHitNormal);
+                Vector3 projCharacterVelocity = Vector3.Project(processedVelocity, hit.EffectiveHitNormal);
+                processedVelocity += projRigidbodyVelocity - projCharacterVelocity;
             }
         }
     }

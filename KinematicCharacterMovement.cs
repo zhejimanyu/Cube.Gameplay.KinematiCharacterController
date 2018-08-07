@@ -52,10 +52,9 @@ namespace Pirates {
 
         void UpdateInput() {
             Assert.IsNotNull(_pawn.controller);
-
-            var playerController = _pawn.controller as PlayerController;
-            if (playerController != null) {
-                var input = playerController.playerInput;
+            
+            if (_pawn.playerController != null) {
+                var input = _pawn.playerController.input;
 
                 var characterInputs = new PlayerCharacterInputs {
                     MoveAxisForward = (input.forward ? 1 : 0) - (input.back ? 1 : 0),
@@ -69,33 +68,30 @@ namespace Pirates {
 
 #if CLIENT
                 if (isClient) {
-                    playerController.playerInput.worldPosition = transform.position;
+                    _pawn.playerController.input.worldPosition = transform.position;
                 }
 #endif
             }
 #if SERVER
-            if (isServer) {
-                var remotePlayerController = _pawn.controller as ServerRemotePlayerController;
-                if (remotePlayerController != null) {
-                    // Snap to client position if close enough, else correct client
-                    var diff = remotePlayerController.playerInput.worldPosition - transform.position;
-                    if (diff.sqrMagnitude < 6) {
-                        _characterController.Motor.SetPosition(remotePlayerController.playerInput.worldPosition);
-                    } else {
-                        remotePlayerController.playerInput.worldPosition = transform.position;
+            if (isServer && _pawn.remotePlayerController != null) {
+                // Snap to client position if close enough, else correct client
+                var diff = _pawn.remotePlayerController.input.worldPosition - transform.position;
+                if (diff.sqrMagnitude < 6) {
+                    _characterController.Motor.SetPosition(_pawn.remotePlayerController.input.worldPosition);
+                } else {
+                    _pawn.remotePlayerController.input.worldPosition = transform.position;
 
-                        if (Time.time >= _nextClientPositionCorrectionTime) {
-                            _nextClientPositionCorrectionTime = Time.time + 0.2f;
+                    if (Time.time >= _nextClientPositionCorrectionTime) {
+                        _nextClientPositionCorrectionTime = Time.time + 0.2f;
 
-                            _playerControllerSystem.SendControllerResetPawnPosition(remotePlayerController.connection, transform.position);
-                        }
+                        _playerControllerSystem.SendControllerResetPawnPosition(_pawn.remotePlayerController.connection, transform.position);
                     }
                 }
             }
 #endif
             var aiController = _pawn.controller as AIController;
             if (aiController != null) {
-                var input = aiController.aiInput;
+                var input = aiController.input;
 
                 var characterInputs = new AICharacterInputs {
                     MoveVector = input.moveVector,
@@ -123,9 +119,7 @@ namespace Pirates {
 
 #if SERVER
         public override void Serialize(BitStream bs, ReplicaSerializationMode mode, ReplicaView view) {
-            var remotePlayerController = _pawn.controller as ServerRemotePlayerController;
-
-            var isViewClientControlled = _pawn.isMounted || (remotePlayerController != null && remotePlayerController.connection == view.connection);
+            var isViewClientControlled = _pawn.isMounted || (_pawn.remotePlayerController != null && _pawn.remotePlayerController.connection == view.connection);
             bs.Write(isViewClientControlled);
             if (isViewClientControlled)
                 return;

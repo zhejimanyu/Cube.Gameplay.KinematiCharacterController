@@ -3,7 +3,8 @@
     "references": [
         "Cube.Core",
         "Cube.Gameplay",
-        "Cube.Networking"
+        "Cube.Networking",
+        "KinematicCharacterController"
     ],
     "optionalUnityReferences": [],
     "includePlatforms": [],

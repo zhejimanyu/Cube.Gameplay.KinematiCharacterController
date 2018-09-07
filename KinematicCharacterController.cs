@@ -65,11 +65,8 @@ namespace Pirates {
         Vector3 _internalVelocityAdd = Vector3.zero;
         bool _shouldBeCrouching = false;
         bool _isCrouching = false;
-
-        Vector3 lastInnerNormal = Vector3.zero;
-        Vector3 lastOuterNormal = Vector3.zero;
-
-        private void Start() {
+        
+        void Start() {
             // Handle initial state
             TransitionToState(CharacterState.Default);
         }
